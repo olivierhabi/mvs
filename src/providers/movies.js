@@ -20,17 +20,13 @@ class Movies {
 
   static async getMovieById(id) {
     try {
-      const res = await fetch(`${config.baseUrl}/3/movie/${id}`, {
-        method: "GET",
+      const res = await axios.get(`${config.baseUrl}/3/movie/${id}`, {
         headers: {
           Authorization: `Bearer ${config.apiKey}`,
         },
       });
 
-      if (res.status === 404) {
-        return null;
-      }
-      const response = await res.json();
+      const response = res.data;
 
       return {
         id: response?.id,
@@ -38,6 +34,9 @@ class Movies {
         release_date: response?.release_date,
       };
     } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return null;
+      }
       throw new Error(error.message);
     }
   }

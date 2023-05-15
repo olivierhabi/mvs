@@ -1,46 +1,74 @@
-import chai from "chai";
+import httpMocks from "node-mocks-http";
 import sinon from "sinon";
-import chaiHttp from "chai-http";
-
-import app from "../app";
-import bcrypt from "../helpers/bcrypt";
+import Authentication from "../controllers/authentication";
 import UserService from "../service/user";
-
-chai.use(chaiHttp);
-chai.should();
+import bcrypt from "../helpers/bcrypt";
+import jwt from "../helpers/jwt";
+import chai, { expect } from "chai";
 
 describe("Authentication", () => {
-  afterEach(() => {
-    sinon.restore();
+  it("should return status 403 when email or password is incorrect", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { password: "wrongpassword", email: "wrongemail@test.com" },
+    });
+
+    const res = httpMocks.createResponse();
+
+    const getUserByEmailStub = sinon
+      .stub(UserService, "getUserByEmail")
+      .resolves(null);
+
+    const bcryptCompareStub = sinon.stub(bcrypt, "compare").resolves(false);
+
+    await Authentication.login(req, res);
+
+    expect(res.statusCode).to.equal(403);
+    const jsonResponse = res._getData();
+    const response = JSON.parse(jsonResponse);
+    expect(response.message).to.equal("Invalid email or password!");
+
+    expect(getUserByEmailStub.calledOnce).to.be.true;
+    expect(bcryptCompareStub.called).to.be.false;
+
+    getUserByEmailStub.restore();
+    bcryptCompareStub.restore();
   });
 
-  describe("POST /auth/login", () => {
-    it("should login successfully", (done) => {
-      const userStub = sinon.stub(UserService, "getUserByEmail").returns({
-        email: "test@example.com",
-        password: bcrypt.encrypt("password"),
-      });
-
-      const bcryptStub = sinon.stub(bcrypt, "compare").returns(true);
-
-      chai
-        .request(app)
-        .post("/auth/login")
-        .send({ email: "test@example.com", password: "password" })
-        .end((err, res) => {
-          userStub.calledOnce.should.be.true;
-          bcryptStub.calledOnce.should.be.true;
-
-          res.should.have.status(200);
-          res.body.should.be.a("object");
-          res.body.should.have.property("status").eql(200);
-          res.body.should.have
-            .property("message")
-            .eql("Logged in successfully!");
-          res.body.should.have.property("token");
-
-          done();
-        });
+  it("should return status 200 when login is successful", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { password: "rightpassword", email: "rightemail@test.com" },
     });
+
+    const res = httpMocks.createResponse();
+
+    const mockUser = {
+      password: "hashedpassword",
+      email: "rightemail@test.com",
+    };
+
+    const getUserByEmailStub = sinon
+      .stub(UserService, "getUserByEmail")
+      .resolves(mockUser);
+
+    const bcryptCompareStub = sinon.stub(bcrypt, "compare").resolves(true);
+
+    const jwtSignStub = sinon.stub(jwt, "jwtSign").returns("token");
+
+    await Authentication.login(req, res);
+
+    expect(res.statusCode).to.equal(200);
+    const jsonResponse = res._getData();
+    const response = JSON.parse(jsonResponse);
+    expect(response.status).to.equal(200);
+    expect(response.message).to.equal("Logged in successfully!");
+    expect(response.token).to.equal("token");
+
+    expect(getUserByEmailStub.calledOnce).to.be.true;
+    expect(bcryptCompareStub.calledOnce).to.be.true;
+    expect(jwtSignStub.calledOnce).to.be.true;
+
+    sinon.restore();
   });
 });

@@ -98,6 +98,7 @@ class Movies {
           message: "Movie can't be found",
         });
       }
+
       if (getMovieById.userId !== req.user.id) {
         return res.status(404).send({
           status: 404,

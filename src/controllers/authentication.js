@@ -45,7 +45,9 @@ class Authentication {
   static async login(req, res) {
     try {
       const { password, email } = req.body;
+
       const user = Authentication.initializeVarsForSignup(req);
+
       const findUser = await UserService.getUserByEmail(user.email);
 
       if (!findUser) {
