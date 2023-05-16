@@ -29,7 +29,7 @@ API URL: `https://mvs-production.up.railway.app`
     - Auth: Bearer Token
     - Replace `{movieId}` with the actual ID of the movie.
 
-3. `PUT /movies/{movieId}` - **Update a Movie by ID**
+3. `PUT /movies/{movieId}` - **Rank and Update a Movie by ID**
     - Auth: Bearer Token
     - Body (raw, JSON): `{"movieId" : 19995, "rank": 1}`
     - Replace `{movieId}` with the actual ID of the movie.
