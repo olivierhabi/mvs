@@ -1,4 +1,4 @@
-# MyTop100Movies API Postman Collection 
+# MyTop100Movies API 
 
 To run this Node.js app, follow the steps below:
 
